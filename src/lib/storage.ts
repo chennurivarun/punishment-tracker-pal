@@ -1,41 +1,53 @@
-import { User, Punishment } from "./schemas";
+interface User {
+  id: string;
+  role: "student" | "staff";
+  name: string;
+  department: string;
+  year?: number;
+  semester?: number;
+  mobile: string;
+}
 
-const STORAGE_KEYS = {
-  USERS: "users",
-  PUNISHMENTS: "punishments",
-} as const;
+class Storage {
+  private readonly USERS_KEY = "users";
 
-export const storage = {
-  getUsers: (): User[] => {
-    const users = localStorage.getItem(STORAGE_KEYS.USERS);
-    return users ? JSON.parse(users) : [];
-  },
-  
-  addUser: (user: User) => {
-    const users = storage.getUsers();
-    if (users.find(u => u.id === user.id)) {
-      throw new Error("User ID already exists");
+  constructor() {
+    this.initializeDefaultUsers();
+  }
+
+  private initializeDefaultUsers() {
+    if (!localStorage.getItem(this.USERS_KEY)) {
+      const defaultUsers: User[] = [
+        {
+          id: "12345678",
+          role: "student",
+          name: "John Doe",
+          department: "CSE",
+          year: 3,
+          semester: 5,
+          mobile: "9876543210"
+        },
+        {
+          id: "87654321",
+          role: "staff",
+          name: "Jane Smith",
+          department: "CSE",
+          mobile: "9876543211"
+        }
+      ];
+      localStorage.setItem(this.USERS_KEY, JSON.stringify(defaultUsers));
     }
+  }
+
+  getUsers(): User[] {
+    return JSON.parse(localStorage.getItem(this.USERS_KEY) || "[]");
+  }
+
+  addUser(user: User) {
+    const users = this.getUsers();
     users.push(user);
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-  },
-  
-  getPunishments: (): Punishment[] => {
-    const punishments = localStorage.getItem(STORAGE_KEYS.PUNISHMENTS);
-    return punishments ? JSON.parse(punishments) : [];
-  },
-  
-  addPunishment: (punishment: Punishment) => {
-    const punishments = storage.getPunishments();
-    punishments.push(punishment);
-    localStorage.setItem(STORAGE_KEYS.PUNISHMENTS, JSON.stringify(punishments));
-  },
-  
-  updatePunishment: (id: string, updates: Partial<Punishment>) => {
-    const punishments = storage.getPunishments();
-    const index = punishments.findIndex(p => p.id === id);
-    if (index === -1) throw new Error("Punishment not found");
-    punishments[index] = { ...punishments[index], ...updates };
-    localStorage.setItem(STORAGE_KEYS.PUNISHMENTS, JSON.stringify(punishments));
-  },
-};
+    localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+  }
+}
+
+export const storage = new Storage();
